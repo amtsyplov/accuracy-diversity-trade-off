@@ -2,10 +2,10 @@ from typing import Tuple
 import torch
 import random
 
-from .user_sequence_dataset import UserSequenceDataset
+from .base_dataset import BaseDataset
 
 
-class NegativeSamplingDataset(UserSequenceDataset):
+class NegativeSamplingSequenceDataset(BaseDataset):
     """
     Instead of (user_id, item_id, score) gives
     (user_id, positive_item_id, positive_item_id)
