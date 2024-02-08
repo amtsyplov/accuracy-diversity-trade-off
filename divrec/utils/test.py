@@ -5,6 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from divrec.datasets import (
+    InferenceDataset,
     UserItemInteractionsDataset,
     UserItemInteractionsSequenceDataset,
     NegativeSamplingDataset,
@@ -24,27 +25,27 @@ def interactions_test_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.eval()
-    for batch, (user_id, user_features, item_id, item_features, score) in enumerate(
-        data_loader
-    ):
-        # Compute prediction and loss
-        batch_size = user_id.size(0)
+    with torch.no_grad():
+        for batch, (user_id, user_features, item_id, item_features, score) in enumerate(
+            data_loader
+        ):
+            # Compute prediction
+            batch_size = user_id.size(0)
 
-        user_sequence = torch.empty(batch_size, 0)
-        user_sequence_features = torch.empty(batch_size, 0, 0)
+            user_sequence = torch.empty(batch_size, 0)
+            user_sequence_features = torch.empty(batch_size, 0, 0)
 
-        predicted_score = model(
-            user_id,
-            user_features,
-            user_sequence,
-            user_sequence_features,
-            item_id,
-            item_features,
-        )
+            predicted_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                item_id,
+                item_features,
+            )
 
-        # Evaluation
-        batch_count += 1
-        with torch.no_grad():
+            # Evaluation
+            batch_count += 1
             for i, metric in enumerate(metrics):
                 metric_values[i] += metric(predicted_score, score).item()
 
@@ -63,28 +64,28 @@ def interactions_sequence_test_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.eval()
-    for batch, (
-        user_id,
-        user_features,
-        user_sequence,
-        item_id,
-        user_sequence_features,
-        item_features,
-        score,
-    ) in enumerate(data_loader):
-        # Compute prediction and loss
-        predicted_score = model(
+    with torch.no_grad():
+        for batch, (
             user_id,
             user_features,
             user_sequence,
-            user_sequence_features,
             item_id,
+            user_sequence_features,
             item_features,
-        )
+            score,
+        ) in enumerate(data_loader):
+            # Compute prediction
+            predicted_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                item_id,
+                item_features,
+            )
 
-        # Evaluation
-        batch_count += 1
-        with torch.no_grad():
+            # Evaluation
+            batch_count += 1
             for i, metric in enumerate(metrics):
                 metric_values[i] += metric(predicted_score, score).item()
 
@@ -103,41 +104,41 @@ def negative_sampling_test_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.eval()
-    for batch, (
-        user_id,
-        user_features,
-        positive_item_id,
-        positive_item_features,
-        negative_item_id,
-        negative_item_features,
-    ) in enumerate(data_loader):
-        # Compute prediction and loss
-        batch_size = user_id.size(0)
-
-        user_sequence = torch.empty(batch_size, 0)
-        user_sequence_features = torch.empty(batch_size, 0, 0)
-
-        positive_score = model(
+    with torch.no_grad():
+        for batch, (
             user_id,
             user_features,
-            user_sequence,
-            user_sequence_features,
             positive_item_id,
             positive_item_features,
-        )
-
-        negative_score = model(
-            user_id,
-            user_features,
-            user_sequence,
-            user_sequence_features,
             negative_item_id,
             negative_item_features,
-        )
+        ) in enumerate(data_loader):
+            # Compute prediction
+            batch_size = user_id.size(0)
 
-        # Evaluation
-        batch_count += 1
-        with torch.no_grad():
+            user_sequence = torch.empty(batch_size, 0)
+            user_sequence_features = torch.empty(batch_size, 0, 0)
+
+            positive_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                positive_item_id,
+                positive_item_features,
+            )
+
+            negative_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                negative_item_id,
+                negative_item_features,
+            )
+
+            # Evaluation
+            batch_count += 1
             for i, metric in enumerate(metrics):
                 metric_values[i] += metric(positive_score, negative_score).item()
 
@@ -156,39 +157,113 @@ def negative_sampling_sequence_test_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.eval()
-    for batch, (
-        user_id,
-        user_features,
-        user_sequence,
-        user_sequence_features,
-        positive_item_id,
-        positive_item_features,
-        negative_item_id,
-        negative_item_features,
-    ) in enumerate(data_loader):
-        # Compute prediction and loss
-        positive_score = model(
+    with torch.no_grad():
+        for batch, (
             user_id,
             user_features,
             user_sequence,
             user_sequence_features,
             positive_item_id,
             positive_item_features,
-        )
-
-        negative_score = model(
-            user_id,
-            user_features,
-            user_sequence,
-            user_sequence_features,
             negative_item_id,
             negative_item_features,
-        )
+        ) in enumerate(data_loader):
+            # Compute prediction
+            positive_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                positive_item_id,
+                positive_item_features,
+            )
 
-        # Evaluation
-        batch_count += 1
-        with torch.no_grad():
+            negative_score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                negative_item_id,
+                negative_item_features,
+            )
+
+            # Evaluation
+            batch_count += 1
             for i, metric in enumerate(metrics):
                 metric_values[i] += metric(positive_score, negative_score).item()
 
     return metric_values / batch_count
+
+
+def inference_loop(data_loader: DataLoader, model: BaseModel) -> torch.Tensor:
+    """
+    Evaluates (no_users, no_items) matrix of model scores.
+    """
+    assert isinstance(data_loader.dataset, InferenceDataset)
+    scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch, (
+            user_id,
+            user_features,
+            user_sequence,
+            user_sequence_features,
+            item_id,
+            item_features,
+        ) in enumerate(data_loader):
+            # Compute prediction
+            score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                item_id,
+                item_features,
+            )
+            scores.append(score)
+    return torch.reshape(
+        torch.concat(scores),
+        (data_loader.dataset.no_users, data_loader.dataset.no_items),
+    )
+
+
+def recommendations_loop(
+    data_loader: DataLoader,
+    model: BaseModel,
+    recommendations_count: int,
+    remove_interactions: bool = True,
+) -> torch.LongTensor:
+    assert isinstance(data_loader.dataset, InferenceDataset)
+    assert data_loader.batch_size == data_loader.dataset.no_items
+    recommendations = []
+    model.eval()
+    with torch.no_grad():
+        for batch, (
+            user_id,
+            user_features,
+            user_sequence,
+            user_sequence_features,
+            item_id,
+            item_features,
+        ) in enumerate(data_loader):
+            # Compute prediction
+            score = model(
+                user_id,
+                user_features,
+                user_sequence,
+                user_sequence_features,
+                item_id,
+                item_features,
+            )
+
+            probability = torch.sigmoid(score)
+            if remove_interactions:
+                probability[user_sequence] = 0.0
+            recommendations.append(torch.argsort(probability)[:recommendations_count])
+
+    recommendations = torch.reshape(
+        torch.concat(recommendations),
+        (data_loader.dataset.no_users, recommendations_count),
+    )
+
+    return torch.LongTensor(recommendations)
