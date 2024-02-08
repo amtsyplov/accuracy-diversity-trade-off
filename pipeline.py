@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from src.models import MatrixFactorization
-from src.datasets import BaseDataset, NegativeSamplingDataset, train_validation_test_split
+from src.datasets import UserItemInteractionsDataset, NegativeSamplingDataset, train_validation_test_split
 
 
 def train_loop():
@@ -17,7 +17,7 @@ def test_loop():
 # load data
 
 
-def load_dataset() -> BaseDataset:
+def load_dataset() -> UserItemInteractionsDataset:
     return NegativeSamplingDataset(1, 1, torch.FloatTensor(torch.empty()), torch.FloatTensor(torch.empty()))
 
 

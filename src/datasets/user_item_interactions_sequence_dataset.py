@@ -1,9 +1,9 @@
 import torch
-from typing import Optional, Tuple
-from .base_dataset import BaseDataset
+from typing import Tuple
+from .user_item_interactions_dataset import UserItemInteractionsDataset
 
 
-class UserSequenceDataset(BaseDataset):
+class UserItemInteractionsSequenceDataset(UserItemInteractionsDataset):
     """
     For each (user_id, item_id, score) also gives
     sequence of all user' interactions before this item.
