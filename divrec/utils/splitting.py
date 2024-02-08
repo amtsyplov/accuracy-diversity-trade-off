@@ -1,11 +1,7 @@
 import pandas as pd
 
 from typing import Tuple
-from src.datasets.user_item_interactions_dataset import UserItemInteractionsDataset
-
-import torch
-from torch import nn
-from torch.utils.data import DataLoader
+from divrec.datasets import UserItemInteractionsDataset
 
 
 def train_test_split(dataset: UserItemInteractionsDataset, test_interactions_per_user: int) -> Tuple[
