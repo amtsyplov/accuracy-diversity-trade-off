@@ -1,6 +1,8 @@
 import pandas as pd
 
 from typing import Tuple
+
+import torch
 from divrec.datasets import UserItemInteractionsDataset
 
 
@@ -12,15 +14,20 @@ def train_test_split(
     )
     interactions_index = interactions.groupby("user_id").cumcount() + 1
 
-    train_interactions = interactions[interactions_index > test_interactions_per_user]
-    test_interactions = interactions[interactions_index <= test_interactions_per_user]
+    train_interactions = torch.LongTensor(
+        interactions[interactions_index > test_interactions_per_user].values[::-1].copy()
+    )
+
+    test_interactions = torch.LongTensor(
+        interactions[interactions_index <= test_interactions_per_user].values[::-1].copy()
+    )
 
     train_dataset = dataset.__class__(
         dataset.no_users,
         dataset.no_items,
         dataset.user_features,
         dataset.item_features,
-        interactions=train_interactions[::-1],
+        interactions=train_interactions,
         padding=dataset.padding,
     )
 
@@ -29,7 +36,7 @@ def train_test_split(
         dataset.no_items,
         dataset.user_features,
         dataset.item_features,
-        interactions=test_interactions[::-1],
+        interactions=test_interactions,
         padding=dataset.padding,
     )
 

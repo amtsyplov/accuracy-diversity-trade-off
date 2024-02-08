@@ -4,9 +4,12 @@ from .base_model import BaseModel
 
 
 class PopularityTopModel(BaseModel):
-    def __init__(self, item_counts: torch.LongTensor):
+    def __init__(self, interactions: torch.LongTensor):
         nn.Module.__init__(self)
-        self.popularity_scores = item_counts / torch.sum(item_counts)
+        items, counts = torch.unique(interactions[:, 1], return_counts=True)
+        self.max_items = torch.max(items).item()
+        self.popularity_scores = torch.zeros(self.max_items + 1)
+        self.popularity_scores[items] = counts / torch.sum(counts)
 
     def forward(
         self,
@@ -17,4 +20,6 @@ class PopularityTopModel(BaseModel):
         item_id: torch.LongTensor,
         item_features: torch.FloatTensor,
     ):
-        return self.popularity_scores[item_id]
+        value = torch.zeros_like(item_id, dtype=torch.float)
+        value[item_id <= self.max_items] = self.popularity_scores[item_id[item_id <= self.max_items]]
+        return value

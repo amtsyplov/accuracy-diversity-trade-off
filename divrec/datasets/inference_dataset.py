@@ -1,13 +1,16 @@
+from torch.utils.data import IterableDataset
 from .user_item_interactions_dataset import UserItemInteractionsDataset
 
 
-class InferenceDataset(UserItemInteractionsDataset):
+class InferenceDataset(IterableDataset, UserItemInteractionsDataset):
     """
     Iterable dataset via all user-item pairs.
     """
-
     def __len__(self):
         return self.no_users * self.no_items
+
+    def __getitem__(self, item):
+        raise NotImplementedError
 
     def __iter__(self):
         for user_id in range(self.no_users):
