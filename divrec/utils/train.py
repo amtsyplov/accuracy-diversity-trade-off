@@ -28,7 +28,9 @@ def interactions_train_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.train()
-    for batch, (user_id, user_features, item_id, item_features, score) in enumerate(data_loader):
+    for batch, (user_id, user_features, item_id, item_features, score) in enumerate(
+        data_loader
+    ):
         # Compute prediction and loss
         batch_size = user_id.size(0)
 
@@ -78,7 +80,15 @@ def interactions_sequence_train_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.train()
-    for batch, (user_id, user_features, user_sequence, item_id, user_sequence_features, item_features, score) in enumerate(data_loader):
+    for batch, (
+        user_id,
+        user_features,
+        user_sequence,
+        item_id,
+        user_sequence_features,
+        item_features,
+        score,
+    ) in enumerate(data_loader):
         # Compute prediction and loss
         predicted_score = model(
             user_id,
@@ -123,7 +133,14 @@ def negative_sampling_train_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.train()
-    for batch, (user_id, user_features, positive_item_id, positive_item_features, negative_item_id, negative_item_features) in enumerate(data_loader):
+    for batch, (
+        user_id,
+        user_features,
+        positive_item_id,
+        positive_item_features,
+        negative_item_id,
+        negative_item_features,
+    ) in enumerate(data_loader):
         # Compute prediction and loss
         batch_size = user_id.size(0)
 
@@ -182,7 +199,16 @@ def negative_sampling_sequence_train_loop(
     metric_values = torch.zeros(len(metrics))
 
     model.train()
-    for batch, (user_id, user_features, user_sequence, user_sequence_features, positive_item_id, positive_item_features, negative_item_id, negative_item_features) in enumerate(data_loader):
+    for batch, (
+        user_id,
+        user_features,
+        user_sequence,
+        user_sequence_features,
+        positive_item_id,
+        positive_item_features,
+        negative_item_id,
+        negative_item_features,
+    ) in enumerate(data_loader):
         # Compute prediction and loss
         positive_score = model(
             user_id,

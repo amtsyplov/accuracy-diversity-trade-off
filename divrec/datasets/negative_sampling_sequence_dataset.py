@@ -10,7 +10,10 @@ class NegativeSamplingSequenceDataset(UserItemInteractionsDataset):
     Instead of (user_id, item_id, score) gives
     (user_id, positive_item_id, positive_item_id)
     """
-    def __getitem__(self, item: int) -> Tuple[
+
+    def __getitem__(
+        self, item: int
+    ) -> Tuple[
         int,
         torch.FloatTensor,
         torch.LongTensor,

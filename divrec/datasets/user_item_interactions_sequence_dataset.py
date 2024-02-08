@@ -10,7 +10,10 @@ class UserItemInteractionsSequenceDataset(UserItemInteractionsDataset):
     If padding is not None, all sequences will have
     equal length == padding.
     """
-    def __getitem__(self, item: int) -> Tuple[
+
+    def __getitem__(
+        self, item: int
+    ) -> Tuple[
         int,
         torch.FloatTensor,
         torch.LongTensor,

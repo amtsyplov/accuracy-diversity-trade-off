@@ -15,13 +15,13 @@ class MatrixFactorization(BaseModel):
         self.item_embedding = nn.Embedding(no_items, embedding_dim)
 
     def forward(
-            self,
-            user_id: torch.LongTensor,
-            user_features: torch.FloatTensor,
-            user_sequence: torch.LongTensor,
-            user_sequence_features: torch.FloatTensor,
-            item_id: torch.LongTensor,
-            item_features: torch.FloatTensor,
+        self,
+        user_id: torch.LongTensor,
+        user_features: torch.FloatTensor,
+        user_sequence: torch.LongTensor,
+        user_sequence_features: torch.FloatTensor,
+        item_id: torch.LongTensor,
+        item_features: torch.FloatTensor,
     ):
         user_embedding = self.user_embedding(user_id)
         item_embedding = torch.transpose(self.item_embedding(item_id), 1, 2)
