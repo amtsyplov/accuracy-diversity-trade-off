@@ -10,7 +10,7 @@ def train_test_split(
     dataset: UserItemInteractionsDataset, test_interactions_per_user: int
 ) -> Tuple[UserItemInteractionsDataset, UserItemInteractionsDataset]:
     interactions = pd.DataFrame(
-        dataset.interactions.numpy()[::-1], columns=["user_id", "item_id", "score"]
+        dataset.interactions.numpy()[::-1], columns=["user_id", "item_id"]
     )
     interactions_index = interactions.groupby("user_id").cumcount() + 1
 
@@ -26,12 +26,21 @@ def train_test_split(
         .copy()
     )
 
+    train_interaction_scores = dataset.interaction_scores[
+        torch.BoolTensor(interactions_index > test_interactions_per_user)
+    ]
+
+    test_interaction_scores = dataset.interaction_scores[
+        torch.BoolTensor(interactions_index <= test_interactions_per_user)
+    ]
+
     train_dataset = dataset.__class__(
         dataset.no_users,
         dataset.no_items,
         dataset.user_features,
         dataset.item_features,
         interactions=train_interactions,
+        interaction_scores=train_interaction_scores,
         padding=dataset.padding,
     )
 
@@ -41,6 +50,7 @@ def train_test_split(
         dataset.user_features,
         dataset.item_features,
         interactions=test_interactions,
+        interaction_scores=test_interaction_scores,
         padding=dataset.padding,
     )
 

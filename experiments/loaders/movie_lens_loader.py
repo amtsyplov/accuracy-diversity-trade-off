@@ -53,12 +53,12 @@ def load_movie_lens(config: Dict[str, Any]) -> UserItemInteractionsDataset:
         names=["user_id", "item_id", "rating", "timestamp"],
     ).sort_values(["user_id", "timestamp"], ignore_index=True)
 
-    interactions = torch.LongTensor(data[["user_id", "item_id"]].values)
+    interactions = torch.LongTensor(data[["user_id", "item_id"]].values - 1)
     interaction_scores = torch.FloatTensor(data["rating"].values)
 
     # count user and items
     uniques = data.nunique()
-    no_users, no_items = uniques["user_id"], uniques["item_id"]
+    no_users, no_items = int(uniques["user_id"]), int(uniques["item_id"])
 
     return UserItemInteractionsDataset(
         no_users,

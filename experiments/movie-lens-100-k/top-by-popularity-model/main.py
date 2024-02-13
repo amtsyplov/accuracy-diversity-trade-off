@@ -58,5 +58,5 @@ def main(config: Dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
-    config = load_config()
-    main(config)
+    configuration = load_config()
+    main(configuration)
