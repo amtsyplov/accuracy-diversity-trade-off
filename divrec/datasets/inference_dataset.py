@@ -6,6 +6,7 @@ class InferenceDataset(IterableDataset, UserItemInteractionsDataset):
     """
     Iterable dataset via all user-item pairs.
     """
+
     def __len__(self):
         return self.no_users * self.no_items
 

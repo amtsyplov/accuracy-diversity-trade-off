@@ -23,7 +23,9 @@ class UserItemInteractionsDataset(Dataset):
             self.all_interactions() if interactions is None else interactions
         )
         self.interaction_scores = (
-            torch.ones(len(self.interactions)) if interaction_scores is None else interaction_scores
+            torch.ones(len(self.interactions))
+            if interaction_scores is None
+            else interaction_scores
         )
         self.padding = padding
 

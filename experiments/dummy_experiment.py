@@ -14,7 +14,9 @@ def load_dataset() -> UserItemInteractionsDataset:
     no_items = 400
     user_features = torch.FloatTensor(torch.randn(no_users, 10))
     item_features = torch.FloatTensor(torch.randn(no_items, 5))
-    dataset = UserItemInteractionsDataset(no_users, no_items, user_features, item_features)
+    dataset = UserItemInteractionsDataset(
+        no_users, no_items, user_features, item_features
+    )
     score = torch.rand(no_users * no_items)
     dataset.interactions = dataset.interactions[score > 0.3]
     return dataset
@@ -30,7 +32,9 @@ def main():
 
     model = PopularityTopModel(train_dataset.interactions)
 
-    recommendations = recommendations_loop(inference_loader, model, 10, remove_interactions=False)
+    recommendations = recommendations_loop(
+        inference_loader, model, 10, remove_interactions=False
+    )
 
     entropy_at_10 = entropy_at_k(test_dataset.interactions, recommendations, 10)
     precision_at_10 = precision_at_k(test_dataset.interactions, recommendations, 10)
@@ -46,5 +50,5 @@ def main():
         mlflow.log_metric("ndcg_at_10", ndcg_at_10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

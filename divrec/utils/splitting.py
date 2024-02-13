@@ -15,11 +15,15 @@ def train_test_split(
     interactions_index = interactions.groupby("user_id").cumcount() + 1
 
     train_interactions = torch.LongTensor(
-        interactions[interactions_index > test_interactions_per_user].values[::-1].copy()
+        interactions[interactions_index > test_interactions_per_user]
+        .values[::-1]
+        .copy()
     )
 
     test_interactions = torch.LongTensor(
-        interactions[interactions_index <= test_interactions_per_user].values[::-1].copy()
+        interactions[interactions_index <= test_interactions_per_user]
+        .values[::-1]
+        .copy()
     )
 
     train_dataset = dataset.__class__(

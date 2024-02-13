@@ -21,5 +21,7 @@ class PopularityTopModel(BaseModel):
         item_features: torch.FloatTensor,
     ):
         value = torch.zeros_like(item_id, dtype=torch.float)
-        value[item_id <= self.max_items] = self.popularity_scores[item_id[item_id <= self.max_items]]
+        value[item_id <= self.max_items] = self.popularity_scores[
+            item_id[item_id <= self.max_items]
+        ]
         return value
