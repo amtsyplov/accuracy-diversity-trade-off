@@ -1,3 +1,5 @@
+import mlflow
+
 import torch
 from torch.utils.data import DataLoader
 
@@ -34,7 +36,14 @@ def main():
     precision_at_10 = precision_at_k(test_dataset.interactions, recommendations, 10)
     ndcg_at_10 = ndcg_at_k(test_dataset.interactions, recommendations, 10)
 
-    print(entropy_at_10, precision_at_10, ndcg_at_10)
+    # MLFlow logging
+    mlflow.set_tracking_uri("http://127.0.0.1:8080")
+    mlflow.set_experiment("Default")
+    with mlflow.start_run():
+        mlflow.set_tag("mlflow.runName", "top-by-popularity-model")
+        mlflow.log_metric("entropy_at_10", entropy_at_10)
+        mlflow.log_metric("precision_at_10", precision_at_10)
+        mlflow.log_metric("ndcg_at_10", ndcg_at_10)
 
 
 if __name__ == '__main__':
