@@ -23,7 +23,7 @@ class NegativeSamplingSequenceDataset(UserItemInteractionsDataset):
         int,
         torch.FloatTensor,
     ]:
-        user_id, positive_item_id, _ = self.interactions[item]
+        user_id, positive_item_id = self.interactions[item]
         negative_item_id = random.randint(0, self.no_items - 1)
         user_sequence = self.get_user_sequence(self.interactions[:item], user_id)
         return (

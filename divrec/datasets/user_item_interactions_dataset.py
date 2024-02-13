@@ -11,7 +11,8 @@ class UserItemInteractionsDataset(Dataset):
         no_items: int,
         user_features: torch.FloatTensor,  # (no_users, features_dim)
         item_features: torch.FloatTensor,  # (no_items, features_dim)
-        interactions: Optional[torch.LongTensor] = None,  # (no_interactions, 3)
+        interactions: Optional[torch.LongTensor] = None,  # (no_interactions, 2)
+        interaction_scores: Optional[torch.Tensor] = None,  # (no_interactions,)
         padding: Optional[int] = None,
     ):
         self.no_users = no_users
@@ -21,6 +22,9 @@ class UserItemInteractionsDataset(Dataset):
         self.interactions = (
             self.all_interactions() if interactions is None else interactions
         )
+        self.interaction_scores = (
+            torch.ones(len(self.interactions)) if interaction_scores is None else interaction_scores
+        )
         self.padding = padding
 
     def __len__(self):
@@ -29,13 +33,13 @@ class UserItemInteractionsDataset(Dataset):
     def __getitem__(
         self, item: int
     ) -> Tuple[int, torch.FloatTensor, int, torch.FloatTensor, float]:
-        user_id, item_id, score = self.interactions[item]
+        user_id, item_id = self.interactions[item]
         return (
             user_id,
             self.user_features[user_id],
             item_id,
             self.item_features[item_id],
-            score,
+            self.interaction_scores[item],
         )
 
     def all_interactions(self):

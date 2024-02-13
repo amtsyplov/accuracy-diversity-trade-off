@@ -22,7 +22,7 @@ class UserItemInteractionsSequenceDataset(UserItemInteractionsDataset):
         torch.FloatTensor,
         float,
     ]:
-        user_id, item_id, score = self.interactions[item]
+        user_id, item_id = self.interactions[item]
         user_sequence = self.get_user_sequence(self.interactions[:item], user_id)
         return (
             user_id,
@@ -31,5 +31,5 @@ class UserItemInteractionsSequenceDataset(UserItemInteractionsDataset):
             self.item_features[user_sequence],
             item_id,
             self.item_features[item_id],
-            score,
+            self.interaction_scores[item],
         )
