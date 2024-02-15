@@ -44,6 +44,12 @@ class UserItemInteractionsDataset(Dataset):
             self.interaction_scores[item],
         )
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(size={len(self)}, no_users={self.no_users}, no_items={self.no_items})"
+
+    def __str__(self):
+        return repr(self)
+
     def all_interactions(self):
         user_id = torch.arange(self.no_users)
         item_id = torch.arange(self.no_items)
