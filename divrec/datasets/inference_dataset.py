@@ -27,14 +27,3 @@ class InferenceDataset(IterableDataset, UserItemInteractionsDataset):
                     item_id,
                     self.item_features[item_id],
                 )
-
-    @classmethod
-    def from_dataset(cls, dataset: UserItemInteractionsDataset):
-        return cls(
-            dataset.no_users,
-            dataset.no_items,
-            dataset.user_features,
-            dataset.item_features,
-            interactions=dataset.interactions,
-            padding=dataset.padding,
-        )

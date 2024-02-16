@@ -64,9 +64,22 @@ class UserItemInteractionsDataset(Dataset):
         if self.padding is None:
             return sequence
         elif size >= self.padding:
-            return sequence[-self.padding :]
+            return sequence[-self.padding:]
         else:
             padding = torch.full(
                 (self.padding - size,), sequence[0], dtype=sequence.dtype
             )
             return torch.LongTensor(torch.concat((padding, sequence), dim=0))
+
+    @classmethod
+    def from_dataset(
+        cls, dataset: "UserItemInteractionsDataset"
+    ) -> "UserItemInteractionsDataset":
+        return cls(
+            dataset.no_users,
+            dataset.no_items,
+            dataset.user_features,
+            dataset.item_features,
+            interactions=dataset.interactions,
+            padding=dataset.padding,
+        )
