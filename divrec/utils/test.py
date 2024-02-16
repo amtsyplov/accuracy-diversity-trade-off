@@ -259,7 +259,9 @@ def recommendations_loop(
             probability = torch.sigmoid(score)
             if remove_interactions:
                 probability[user_sequence] = 0.0
-            recommendations.append(torch.argsort(probability, descending=True)[:recommendations_count])
+            recommendations.append(
+                torch.argsort(probability, descending=True)[:recommendations_count]
+            )
 
     recommendations = torch.reshape(
         torch.concat(recommendations),

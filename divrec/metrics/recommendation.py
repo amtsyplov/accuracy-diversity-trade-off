@@ -51,7 +51,7 @@ def entropy_at_k(
 
 
 def popularity_lift_at_k(
-        interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
+    interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
 ) -> float:
     p_items, p_counts = torch.unique(interactions[:, 1], return_counts=True)
     q_items, q_counts = torch.unique(recommendations[:, :k], return_counts=True)
@@ -73,7 +73,9 @@ class IntraListDiversity(nn.Module):
         nn.Module.__init__(self)
         self.distance_matrix = distance_matrix
 
-    def forward(self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    def forward(
+        self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
         distance_sum = torch.take_along_dim(
             self.distance_matrix[recommendations],
             recommendations[:, None, :],
@@ -95,7 +97,9 @@ class Miscalibration(nn.Module):
         nn.Module.__init__(self)
         self.item_categories = item_categories
 
-    def forward(self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    def forward(
+        self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
         p = self.item_categories[user_sequence].sum(dim=1) / user_sequence.size(1)
         q = self.item_categories[recommendations].sum(dim=1) / recommendations.size(1)
         return torch.sum((torch.sqrt(p) - torch.sqrt(q)) ** 2, dim=1) / math.sqrt(2)
