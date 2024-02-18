@@ -4,3 +4,4 @@ mlflow_experiment: "movie-lens-100-k"
 mlflow_run_name: "random-model"
 test_interactions_per_user: 10
 ilbu_quantile: 0.8
+seed: 42

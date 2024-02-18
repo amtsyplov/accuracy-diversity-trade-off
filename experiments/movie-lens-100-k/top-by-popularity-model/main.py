@@ -1,12 +1,13 @@
+import math
 import os
-import click
 
+import click
+import mlflow
 import numpy as np
 import pandas as pd
-
-import mlflow
-
 import torch
+from loaders import load_config, load_movie_lens
+from loaders.utils import get_logger, seed_everything
 from torch.utils.data import DataLoader
 
 from divrec.datasets import InferenceDataset
@@ -14,13 +15,16 @@ from divrec.metrics import (
     precision_at_k,
     ndcg_at_k,
     entropy_at_k,
-    IntraListBinaryUnfairness,
+    intra_list_binary_unfairness,
+    intra_list_diversity,
 )
 from divrec.models import PopularityTopModel
-from divrec.utils import recommendations_loop, train_test_split, popularity_categories
-
-from loaders import load_config, load_movie_lens
-from loaders.utils import get_logger
+from divrec.utils import (
+    recommendations_loop,
+    train_test_split,
+    popularity_categories,
+    features_distance_matrix,
+)
 
 
 @click.command()
@@ -31,6 +35,8 @@ def main(filepath: str) -> None:
 
     config = load_config(os.path.abspath(filepath))
     logger.info("Load config:\n" + str(config))
+
+    seed_everything(config["seed"])
 
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment"])
@@ -77,57 +83,49 @@ def main(filepath: str) -> None:
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        # - default metrics
-        precision_at_10 = precision_at_k(
-            test_dataset.interactions,
-            recommendations,
-            k,
-        )
-        mlflow.log_metric(f"precision_at_{k}", precision_at_10)
-        logger.info(f"Precision@{k}: {precision_at_10:.6f}")
-
-        ndcg_at_10 = ndcg_at_k(
-            test_dataset.interactions,
-            recommendations,
-            k,
-        )
-        mlflow.log_metric(f"ndcg_at_{k}", ndcg_at_10)
-        logger.info(f"NDCG@{k}: {ndcg_at_10:.6f}")
-
-        # - diversity metrics
         scores = pd.DataFrame(np.arange(dataset.no_users), columns=["user_id"])
 
-        # - - entropy_at_10
-        entropy_at_10 = entropy_at_k(
-            test_dataset.interactions,
-            recommendations,
-            k,
-        )
+        precision_at_10 = precision_at_k(test_dataset.interactions, recommendations, k)
+        scores[f"precision_at_{k}"] = precision_at_10.numpy()
+        mlflow.log_metric(f"precision_at_{k}", torch.mean(precision_at_10).item())
+        logger.info(f"Precision@{k}: {torch.mean(precision_at_10).item():.6f}")
+
+        ndcg_at_10 = ndcg_at_k(test_dataset.interactions, recommendations, k)
+        scores[f"ndcg_at_{k}"] = ndcg_at_10.numpy()
+        mlflow.log_metric(f"ndcg_at_{k}", torch.mean(ndcg_at_10).item())
+        logger.info(f"NDCG@{k}: {torch.mean(ndcg_at_10).item():.6f}")
+
+        entropy_at_10 = entropy_at_k(test_dataset.interactions, recommendations, k)
+        scores[f"entropy_at_{k}"] = math.log(k)
         mlflow.log_metric(f"entropy_at_{k}", entropy_at_10)
         logger.info(f"Entropy@{k}: {entropy_at_10:.6f}")
 
-        # - - ilbu by genres
-        dummy_sequences = torch.LongTensor(torch.empty(size=(dataset.no_users, 1), dtype=torch.long))
+        ild_genres_at_10 = intra_list_diversity(
+            features_distance_matrix(dataset.item_features), recommendations
+        )
+        scores["ild_genres"] = ild_genres_at_10.numpy()
+        mlflow.log_metric(f"ild_genres_at_{k}", torch.mean(ild_genres_at_10).item())
+        logger.info(f"ILD by genres@{k}: {torch.mean(ild_genres_at_10).item():.6f}")
 
-        ild_genres_fn = IntraListBinaryUnfairness(train_dataset.item_features)
-        ild_genres = ild_genres_fn.forward(dummy_sequences, recommendations)
-        scores["ild_genres"] = ild_genres.numpy()
-        mlflow.log_metric(f"ild_genres_at_{k}", ild_genres.numpy().mean())
-        logger.info(f"ild_genres@{k}: {ild_genres.numpy().mean():.6f}")
-
-        # ilbu by popularity 20%
-        popularity_item_categories = popularity_categories(
-            train_dataset.no_items, train_dataset.interactions, config["ilbu_quantile"]
+        ilbu_at_top_20_at_10 = intra_list_binary_unfairness(
+            popularity_categories(
+                train_dataset.no_items,
+                train_dataset.interactions,
+                config["ilbu_quantile"],
+            ),
+            recommendations,
+        )
+        scores[f"ilbu_at_top_20_at_{k}"] = ilbu_at_top_20_at_10.numpy()
+        mlflow.log_metric(
+            f"ilbu_at_top_20_at_{k}", torch.mean(ilbu_at_top_20_at_10).item()
+        )
+        logger.info(
+            f"ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}"
         )
 
-        ilbu_20_fn = IntraListBinaryUnfairness(popularity_item_categories)
-        ilbu_20 = ilbu_20_fn.forward(dummy_sequences, recommendations)
-        scores["ilbu_20"] = ilbu_20.numpy()
-        mlflow.log_metric(f"ilbu_20_at_{k}", ilbu_20.numpy().mean())
-        logger.info(f"ilbu_20@{k}: {ilbu_20.numpy().mean():.6f}")
-
         scores.to_csv("metrics.csv")
-        logger.info("Save metrics")
+        logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
+
         # end run
         logger.info(f"Finish model {model} evaluation")
 

@@ -1,13 +1,13 @@
-import os
-import click
 import math
+import os
 
+import click
+import mlflow
 import numpy as np
 import pandas as pd
-
-import mlflow
-
 import torch
+from loaders import load_config, load_movie_lens
+from loaders.utils import get_logger, seed_everything
 from torch.utils.data import DataLoader
 
 from divrec.datasets import InferenceDataset
@@ -19,10 +19,12 @@ from divrec.metrics import (
     intra_list_binary_unfairness,
 )
 from divrec.models import RandomModel
-from divrec.utils import recommendations_loop, train_test_split, popularity_categories, features_distance_matrix
-
-from loaders import load_config, load_movie_lens
-from loaders.utils import get_logger
+from divrec.utils import (
+    recommendations_loop,
+    train_test_split,
+    popularity_categories,
+    features_distance_matrix,
+)
 
 
 @click.command()
@@ -33,6 +35,8 @@ def main(filepath: str) -> None:
 
     config = load_config(os.path.abspath(filepath))
     logger.info("Load config:\n" + str(config))
+
+    seed_everything(config["seed"])
 
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment"])
@@ -96,18 +100,28 @@ def main(filepath: str) -> None:
         mlflow.log_metric(f"entropy_at_{k}", entropy_at_10)
         logger.info(f"Entropy@{k}: {entropy_at_10:.6f}")
 
-        ild_genres_at_10 = intra_list_diversity(features_distance_matrix(dataset.item_features), recommendations)
+        ild_genres_at_10 = intra_list_diversity(
+            features_distance_matrix(dataset.item_features), recommendations
+        )
         scores["ild_genres"] = ild_genres_at_10.numpy()
         mlflow.log_metric(f"ild_genres_at_{k}", torch.mean(ild_genres_at_10).item())
         logger.info(f"ILD by genres@{k}: {torch.mean(ild_genres_at_10).item():.6f}")
 
         ilbu_at_top_20_at_10 = intra_list_binary_unfairness(
-            popularity_categories(train_dataset.no_items, train_dataset.interactions, config["ilbu_quantile"]),
+            popularity_categories(
+                train_dataset.no_items,
+                train_dataset.interactions,
+                config["ilbu_quantile"],
+            ),
             recommendations,
         )
         scores[f"ilbu_at_top_20_at_{k}"] = ilbu_at_top_20_at_10.numpy()
-        mlflow.log_metric(f"ilbu_at_top_20_at_{k}", torch.mean(ilbu_at_top_20_at_10).item())
-        logger.info(f"ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}")
+        mlflow.log_metric(
+            f"ilbu_at_top_20_at_{k}", torch.mean(ilbu_at_top_20_at_10).item()
+        )
+        logger.info(
+            f"ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}"
+        )
 
         scores.to_csv("metrics.csv")
         logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
