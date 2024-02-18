@@ -1,3 +1,4 @@
+from .evaluation import popularity_categories
 from .splitting import train_test_split, train_validation_test_split
 
 from .test import (
@@ -30,4 +31,5 @@ __all__ = [
     "interactions_sequence_train_loop",
     "negative_sampling_train_loop",
     "negative_sampling_sequence_train_loop",
+    "popularity_categories",
 ]
