@@ -102,7 +102,7 @@ def main(filepath: str) -> None:
         k = config["test_interactions_per_user"]
         epochs = config["epochs"]
         logger.info(f"Start training model {model}")
-        for epoch in range(epochs):
+        for epoch in range(1, epochs + 1):
             loss_value, _ = negative_sampling_train_loop(
                 train_loader, model, loss_fn, optimizer
             )
