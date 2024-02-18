@@ -1,4 +1,4 @@
-from .evaluation import popularity_categories
+from .evaluation import popularity_categories, features_distance_matrix
 from .splitting import train_test_split, train_validation_test_split
 
 from .test import (
@@ -24,6 +24,7 @@ __all__ = [
     "inference_loop",
     "interactions_test_loop",
     "interactions_sequence_test_loop",
+    "features_distance_matrix",
     "negative_sampling_test_loop",
     "negative_sampling_sequence_test_loop",
     "recommendations_loop",

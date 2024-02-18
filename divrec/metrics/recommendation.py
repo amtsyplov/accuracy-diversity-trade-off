@@ -3,30 +3,30 @@ import torch
 
 def precision_at_k(
     interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
-) -> float:
-    value = 0
+) -> torch.Tensor:
+    values = []
     for user_id, recommended in enumerate(recommendations[:, :k]):
         sequence = interactions[interactions[:, 0] == user_id, 1]
-        value += torch.isin(recommended, sequence).sum().item() / k
-    return value / len(recommendations)
+        values.append(torch.isin(recommended, sequence).sum().item() / k)
+    return torch.FloatTensor(values)
 
 
 def hit_rate_at_k(
     interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
-) -> float:
+) -> torch.Tensor:
     return precision_at_k(interactions, recommendations, k)
 
 
 def ndcg_at_k(
     interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
-) -> float:
+) -> torch.Tensor:
     discount = torch.log2(torch.arange(k) + 2)
     max_value = torch.sum(1 / discount).item()
-    value = 0
+    values = []
     for user_id, recommended in enumerate(recommendations[:, :k]):
         sequence = interactions[interactions[:, 0] == user_id, 1]
-        value += (
+        values.append(
             torch.sum(1 / discount[torch.isin(recommended, sequence)]).item()
             / max_value
         )
-    return value / len(recommendations)
+    return torch.FloatTensor(values)
