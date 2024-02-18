@@ -2,6 +2,7 @@ import math
 
 from typing import Union
 
+import pandas as pd
 import torch
 
 
@@ -11,7 +12,9 @@ def entropy_at_k(
     interacted_items = torch.unique(interactions[:, 1])
     recommended_items, counts = torch.unique(recommendations[:, :k], return_counts=True)
 
-    max_value = math.log(max(torch.max(interacted_items).item(), torch.max(recommended_items).item()) + 1)
+    max_value = math.log(
+        max(torch.max(interacted_items).item(), torch.max(recommended_items).item()) + 1
+    )
     min_value = math.log(k)
 
     probability = counts / counts.sum().item()
@@ -22,23 +25,36 @@ def entropy_at_k(
 
 def popularity_lift_at_k(
     interactions: torch.LongTensor, recommendations: torch.LongTensor, k: int
-) -> float:
-    p_items, p_counts = torch.unique(interactions[:, 1], return_counts=True)
-    q_items, q_counts = torch.unique(recommendations[:, :k], return_counts=True)
+) -> torch.Tensor:
+    no_items = (
+        max(
+            torch.max(interactions[:, 1]).item(),
+            torch.max(recommendations[:, :k]).item(),
+        )
+        + 1
+    )
+    popularity = torch.zeros(no_items)
+    items, counts = torch.unique(interactions[:, 1], return_counts=True)
+    popularity[items] = counts / torch.sum(counts).item()
 
-    p_max_idx = torch.max(p_items).item()
-    q_max_idx = torch.max(q_items).item()
+    interactions_df = pd.DataFrame(
+        interactions.detach().numpy(), columns=["user_id", "item_id"]
+    )
+    interactions_df["theta"] = popularity[interactions_df["item_id"]]
+    gap_p = torch.tensor(
+        interactions_df.groupby("user_id")
+        .mean()[["theta"]]
+        .reset_index()
+        .sort_values("user_id", ignore_index=True)
+        .theta.values
+    )
+    gap_q = torch.mean(popularity[recommendations[:, :k]], dim=1)
+    return (gap_q - gap_p) / gap_p
 
-    p = torch.zeros(max(p_max_idx, q_max_idx) + 1)
-    p[p_items] = p_counts
 
-    q = torch.zeros(max(p_max_idx, q_max_idx) + 1)
-    q[q_items] = q_counts
-
-    return (q - p) / p
-
-
-def intra_list_diversity(distance_matrix: torch.Tensor, recommendations: torch.LongTensor) -> torch.Tensor:
+def intra_list_diversity(
+    distance_matrix: torch.Tensor, recommendations: torch.LongTensor
+) -> torch.Tensor:
     distance_sum = torch.take_along_dim(
         distance_matrix[recommendations],
         recommendations[:, None, :],
@@ -48,14 +64,16 @@ def intra_list_diversity(distance_matrix: torch.Tensor, recommendations: torch.L
     return distance_sum / pairs_count
 
 
-def intra_list_binary_unfairness(item_categories: torch.Tensor, recommendations: torch.LongTensor) -> torch.Tensor:
+def intra_list_binary_unfairness(
+    item_categories: torch.Tensor, recommendations: torch.LongTensor
+) -> torch.Tensor:
     return intra_list_diversity(item_categories @ item_categories.T, recommendations)
 
 
 def miscalibration(
-        item_categories: torch.Tensor,
-        user_sequence: torch.LongTensor,
-        recommendations: torch.LongTensor,
+    item_categories: torch.Tensor,
+    user_sequence: torch.LongTensor,
+    recommendations: torch.LongTensor,
 ) -> Union[float, torch.Tensor]:
     if recommendations.ndim == 1:  # one user case
         p = item_categories[user_sequence].sum(dim=0) / user_sequence.size(0)

@@ -17,6 +17,7 @@ from divrec.metrics import (
     entropy_at_k,
     intra_list_diversity,
     intra_list_binary_unfairness,
+    popularity_lift_at_k,
 )
 from divrec.models import RandomModel
 from divrec.utils import (
@@ -122,6 +123,15 @@ def main(filepath: str) -> None:
         logger.info(
             f"ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}"
         )
+
+        popularity_lift_at_10 = popularity_lift_at_k(
+            train_dataset.interactions, recommendations, k
+        )
+        scores[f"popularity_lift_at_{k}"] = popularity_lift_at_10.numpy()
+        mlflow.log_metric(
+            f"popularity_lift_at_{k}", torch.mean(popularity_lift_at_10).item()
+        )
+        logger.info(f"PL@{k}: {torch.mean(popularity_lift_at_10).item():.6f}")
 
         scores.to_csv("metrics.csv")
         logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
