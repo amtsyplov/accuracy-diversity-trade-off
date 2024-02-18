@@ -10,6 +10,7 @@ class NegativeSamplingDataset(UserItemInteractionsDataset):
     Instead of (user_id, item_id, score) gives
     (user_id, positive_item_id, positive_item_id)
     """
+
     def __init__(self, *args, max_sampled: int = 1, **kwargs):
         UserItemInteractionsDataset.__init__(self, *args, **kwargs)
         self.max_sampled = max_sampled

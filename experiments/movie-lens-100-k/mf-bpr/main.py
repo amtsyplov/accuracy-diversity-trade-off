@@ -41,7 +41,9 @@ class BPRLoss(nn.Module):
         nn.Module.__init__(self)
         self.log_sigmoid = nn.LogSigmoid()
 
-    def forward(self, positive_score: torch.Tensor, negative_score: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, positive_score: torch.Tensor, negative_score: torch.Tensor
+    ) -> torch.Tensor:
         return -torch.mean(self.log_sigmoid(positive_score - negative_score))
 
 
@@ -78,7 +80,9 @@ def main(filepath: str) -> None:
         inference_loader = DataLoader(inference_dataset, batch_size=dataset.no_items)
 
         # prepare model
-        model = MatrixFactorization(dataset.no_users, dataset.no_items, config["embedding_dim"])
+        model = MatrixFactorization(
+            dataset.no_users, dataset.no_items, config["embedding_dim"]
+        )
         model.apply(init_matrix_factorization)
         logger.info(f"Model {model} has been created")
 
@@ -99,7 +103,9 @@ def main(filepath: str) -> None:
         epochs = config["epochs"]
         logger.info(f"Start training model {model}")
         for epoch in range(epochs):
-            loss_value, _ = negative_sampling_train_loop(train_loader, model, loss_fn, optimizer)
+            loss_value, _ = negative_sampling_train_loop(
+                train_loader, model, loss_fn, optimizer
+            )
             mlflow.log_metric("log_sigmoid", loss_value, epoch)
             logger.info(f"Epoch[{epoch:2d}/{epochs}] BPR loss: {loss_value:.6f}")
 
@@ -110,13 +116,23 @@ def main(filepath: str) -> None:
                 remove_interactions=True,
             )
 
-            precision_at_10 = precision_at_k(test_dataset.interactions, recommendations, k)
-            mlflow.log_metric(f"train_precision_at_{k}", torch.mean(precision_at_10).item(), epoch)
-            logger.info(f"Epoch[{epoch:2d}/{epochs}] Precision@{k}: {torch.mean(precision_at_10).item():.6f}")
+            precision_at_10 = precision_at_k(
+                test_dataset.interactions, recommendations, k
+            )
+            mlflow.log_metric(
+                f"train_precision_at_{k}", torch.mean(precision_at_10).item(), epoch
+            )
+            logger.info(
+                f"Epoch[{epoch:2d}/{epochs}] Precision@{k}: {torch.mean(precision_at_10).item():.6f}"
+            )
 
             ndcg_at_10 = ndcg_at_k(test_dataset.interactions, recommendations, k)
-            mlflow.log_metric(f"train_ndcg_at_{k}", torch.mean(ndcg_at_10).item(), epoch)
-            logger.info(f"Epoch[{epoch:2d}/{epochs}] NDCG@{k}: {torch.mean(ndcg_at_10).item():.6f}")
+            mlflow.log_metric(
+                f"train_ndcg_at_{k}", torch.mean(ndcg_at_10).item(), epoch
+            )
+            logger.info(
+                f"Epoch[{epoch:2d}/{epochs}] NDCG@{k}: {torch.mean(ndcg_at_10).item():.6f}"
+            )
 
             entropy_at_10 = entropy_at_k(test_dataset.interactions, recommendations, k)
             mlflow.log_metric(f"train_entropy_at_{k}", entropy_at_10, epoch)
@@ -125,8 +141,12 @@ def main(filepath: str) -> None:
             ild_genres_at_10 = intra_list_diversity(
                 features_distance_matrix(dataset.item_features), recommendations
             )
-            mlflow.log_metric(f"train_ild_genres_at_{k}", torch.mean(ild_genres_at_10).item(), epoch)
-            logger.info(f"Epoch[{epoch:2d}/{epochs}] ILD by genres@{k}: {torch.mean(ild_genres_at_10).item():.6f}")
+            mlflow.log_metric(
+                f"train_ild_genres_at_{k}", torch.mean(ild_genres_at_10).item(), epoch
+            )
+            logger.info(
+                f"Epoch[{epoch:2d}/{epochs}] ILD by genres@{k}: {torch.mean(ild_genres_at_10).item():.6f}"
+            )
 
             ilbu_at_top_20_at_10 = intra_list_binary_unfairness(
                 popularity_categories(
@@ -137,7 +157,9 @@ def main(filepath: str) -> None:
                 recommendations,
             )
             mlflow.log_metric(
-                f"train_ilbu_at_top_20_at_{k}", torch.mean(ilbu_at_top_20_at_10).item(), epoch
+                f"train_ilbu_at_top_20_at_{k}",
+                torch.mean(ilbu_at_top_20_at_10).item(),
+                epoch,
             )
             logger.info(
                 f"Epoch[{epoch:2d}/{epochs}] ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}"
