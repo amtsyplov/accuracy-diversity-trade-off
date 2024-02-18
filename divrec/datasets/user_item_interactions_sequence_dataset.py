@@ -11,7 +11,9 @@ class UserItemInteractionsSequenceDataset(UserItemInteractionsDataset):
     equal length == padding.
     """
 
-    def __getitem__(self, item: int) -> Tuple[
+    def __getitem__(
+        self, item: int
+    ) -> Tuple[
         int,
         torch.FloatTensor,
         torch.LongTensor,

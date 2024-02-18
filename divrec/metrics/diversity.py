@@ -55,14 +55,14 @@ class IntraListDiversity(nn.Module):
 
 
 class IntraListBinaryUnfairness(IntraListDiversity):
-    def __init__(self, item_categories: torch.LongTensor):
+    def __init__(self, item_categories: torch.Tensor):
         nn.Module.__init__(self)
         self.item_categories = item_categories
         self.distance_matrix = item_categories @ item_categories.T
 
 
 class Miscalibration(nn.Module):
-    def __init__(self, item_categories: torch.LongTensor):
+    def __init__(self, item_categories: torch.Tensor):
         nn.Module.__init__(self)
         self.item_categories = item_categories
 

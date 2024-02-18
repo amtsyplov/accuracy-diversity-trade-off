@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -167,3 +168,4 @@ cython_debug/
 # experiments data
 experiments/movie-lens-100-k/data
 experiments/amazon-beauty/data.csv
+*.csv

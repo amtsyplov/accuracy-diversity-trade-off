@@ -3,3 +3,4 @@ mlflow_tracking_uri: "http://127.0.0.1:8080"
 mlflow_experiment: "movie-lens-100-k"
 mlflow_run_name: "top-by-popularity-model"
 test_interactions_per_user: 10
+ilbu_quantile: 0.8

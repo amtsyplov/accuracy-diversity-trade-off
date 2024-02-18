@@ -64,7 +64,7 @@ class UserItemInteractionsDataset(Dataset):
         if self.padding is None:
             return sequence
         elif size >= self.padding:
-            return sequence[-self.padding:]
+            return sequence[-self.padding :]
         else:
             padding = torch.full(
                 (self.padding - size,), sequence[0], dtype=sequence.dtype
