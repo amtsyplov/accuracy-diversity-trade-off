@@ -1,7 +1,8 @@
 import math
 
+from typing import Union
+
 import torch
-from torch import nn
 
 
 def entropy_at_k(
@@ -37,38 +38,31 @@ def popularity_lift_at_k(
     return (q - p) / p
 
 
-class IntraListDiversity(nn.Module):
-    def __init__(self, distance_matrix: torch.Tensor):
-        nn.Module.__init__(self)
-        self.distance_matrix = distance_matrix
-
-    def forward(
-        self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor
-    ) -> torch.Tensor:
-        distance_sum = torch.take_along_dim(
-            self.distance_matrix[recommendations],
-            recommendations[:, None, :],
-            dim=2,
-        ).sum(dim=(1, 2))
-        pairs_count = recommendations.size(1) * (recommendations.size(1) - 1)
-        return distance_sum / pairs_count
+def intra_list_diversity(distance_matrix: torch.Tensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    distance_sum = torch.take_along_dim(
+        distance_matrix[recommendations],
+        recommendations[:, None, :],
+        dim=2,
+    ).sum(dim=(1, 2))
+    pairs_count = recommendations.size(1) * (recommendations.size(1) - 1)
+    return distance_sum / pairs_count
 
 
-class IntraListBinaryUnfairness(IntraListDiversity):
-    def __init__(self, item_categories: torch.Tensor):
-        nn.Module.__init__(self)
-        self.item_categories = item_categories
-        self.distance_matrix = item_categories @ item_categories.T
+def intra_list_binary_unfairness(item_categories: torch.Tensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    return intra_list_diversity(item_categories @ item_categories.T, recommendations)
 
 
-class Miscalibration(nn.Module):
-    def __init__(self, item_categories: torch.Tensor):
-        nn.Module.__init__(self)
-        self.item_categories = item_categories
-
-    def forward(
-        self, user_sequence: torch.LongTensor, recommendations: torch.LongTensor
-    ) -> torch.Tensor:
-        p = self.item_categories[user_sequence].sum(dim=1) / user_sequence.size(1)
-        q = self.item_categories[recommendations].sum(dim=1) / recommendations.size(1)
+def miscalibration(
+        item_categories: torch.Tensor,
+        user_sequence: torch.LongTensor,
+        recommendations: torch.LongTensor,
+) -> Union[float, torch.Tensor]:
+    if recommendations.ndim == 1:  # one user case
+        p = item_categories[user_sequence].sum(dim=0) / user_sequence.size(0)
+        q = item_categories[recommendations].sum(dim=0) / recommendations.size(0)
+        value = torch.sum((torch.sqrt(p) - torch.sqrt(q)) ** 2) / math.sqrt(2)
+        return value.item()
+    else:  # batch of users with same user_sequence length
+        p = item_categories[user_sequence].sum(dim=1) / user_sequence.size(1)
+        q = item_categories[recommendations].sum(dim=1) / recommendations.size(1)
         return torch.sum((torch.sqrt(p) - torch.sqrt(q)) ** 2, dim=1) / math.sqrt(2)

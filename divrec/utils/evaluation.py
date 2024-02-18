@@ -9,3 +9,7 @@ def popularity_categories(
     popularity[items] = counts
     q_value = torch.quantile(popularity.to(torch.float), q).item()
     return torch.reshape(popularity >= q_value, shape=(-1, 1)).to(torch.float)
+
+
+def features_distance_matrix(item_features: torch.Tensor) -> torch.Tensor:
+    return torch.norm(item_features[:, None] - item_features[None], dim=2)
