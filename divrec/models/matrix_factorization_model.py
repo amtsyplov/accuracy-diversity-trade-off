@@ -24,5 +24,5 @@ class MatrixFactorization(BaseModel):
         item_features: torch.FloatTensor,
     ):
         user_embedding = self.user_embedding(user_id)
-        item_embedding = torch.transpose(self.item_embedding(item_id), 1, 2)
-        return torch.matmul(user_embedding, item_embedding)
+        item_embedding = self.item_embedding(item_id)
+        return torch.sum(user_embedding * item_embedding, dim=1)
