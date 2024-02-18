@@ -11,7 +11,7 @@ def entropy_at_k(
     interacted_items = torch.unique(interactions[:, 1])
     recommended_items, counts = torch.unique(recommendations[:, :k], return_counts=True)
 
-    max_value = math.log(len(interacted_items))
+    max_value = math.log(max(torch.max(interacted_items).item(), torch.max(recommended_items).item()) + 1)
     min_value = math.log(k)
 
     probability = counts / counts.sum().item()
