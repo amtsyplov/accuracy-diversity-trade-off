@@ -16,4 +16,4 @@ class RandomModel(BaseModel):
         item_id: torch.LongTensor,
         item_features: torch.FloatTensor,
     ):
-        return torch.rand(size=item_id.size(0))
+        return torch.rand(size=(item_id.size(0),))
