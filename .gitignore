@@ -170,3 +170,4 @@ experiments/movie-lens-100-k/data
 experiments/amazon-beauty/data.csv
 *.csv
 *.jpg
+*.pth
