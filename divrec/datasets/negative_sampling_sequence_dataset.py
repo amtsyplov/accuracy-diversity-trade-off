@@ -10,6 +10,12 @@ class NegativeSamplingSequenceDataset(UserItemInteractionsDataset):
     Instead of (user_id, item_id, score) gives
     (user_id, positive_item_id, positive_item_id)
     """
+    def __init__(self, *args, max_sampled: int = 1, **kwargs):
+        UserItemInteractionsDataset.__init__(self, *args, **kwargs)
+        self.max_sampled = max_sampled
+
+    def __len__(self):
+        return UserItemInteractionsDataset.__len__(self) * self.max_sampled
 
     def __getitem__(self, item: int) -> Tuple[
         int,
@@ -21,7 +27,7 @@ class NegativeSamplingSequenceDataset(UserItemInteractionsDataset):
         int,
         torch.FloatTensor,
     ]:
-        user_id, positive_item_id = self.interactions[item]
+        user_id, positive_item_id = self.interactions[item // self.max_sampled]
         negative_item_id = random.randint(0, self.no_items - 1)
         user_sequence = self.get_user_sequence(self.interactions[:item], user_id)
         return (
