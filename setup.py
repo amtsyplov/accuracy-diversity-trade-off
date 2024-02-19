@@ -19,6 +19,7 @@ if __name__ == "__main__":
             "divrec.datasets",
             "divrec.utils",
             "divrec.metrics",
+            "experiments.assistant"
         ],
         url="",
         license="MIT License",

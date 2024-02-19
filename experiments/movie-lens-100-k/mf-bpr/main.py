@@ -6,8 +6,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 import torch
-from loaders import load_config, load_movie_lens
-from loaders.utils import get_logger, seed_everything
+from experiments.assistant import load_config, load_movie_lens, get_logger, seed_everything
 from torch import nn
 from torch.utils.data import DataLoader
 
