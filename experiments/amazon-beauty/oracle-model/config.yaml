@@ -1,0 +1,8 @@
+data_dir: "/Users/alexey.tsyplov/Projects/accuracy-diversity-trade-off/experiments/amazon-beauty/"
+mlflow_tracking_uri: "http://127.0.0.1:8080"
+mlflow_experiment: "amazon-beauty"
+mlflow_run_name: "oracle-model"
+min_user_interactions: 10
+test_interactions_per_user: 5
+ilbu_quantile: 0.8
+seed: 42

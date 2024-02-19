@@ -22,7 +22,7 @@ def load_amazon_beauty(config: Dict[str, Any]) -> UserItemInteractionsDataset:
         .reset_index()
 
     allowed_users = interactions_count\
-        .loc[interactions_count["InteractionsCount"] > 10, ["UserId"]]\
+        .loc[interactions_count["InteractionsCount"] >= config["min_user_interactions"], ["UserId"]]\
         .reset_index(drop=True)
 
     data_filtered = data.merge(allowed_users, how="inner", on="UserId")
@@ -40,7 +40,7 @@ def load_amazon_beauty(config: Dict[str, Any]) -> UserItemInteractionsDataset:
         item_encoder.fit_transform(data_filtered["ProductId"])
     ]))
 
-    interaction_scores = torch.tensor(data["Rating"].values, dtype=torch.float)
+    interaction_scores = torch.tensor(data_filtered["Rating"].values, dtype=torch.float)
 
     return UserItemInteractionsDataset(
         no_users,
