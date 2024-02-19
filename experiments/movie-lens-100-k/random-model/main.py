@@ -1,29 +1,23 @@
-import math
 import os
 
 import click
 import mlflow
 import numpy as np
 import pandas as pd
-import torch
-from experiments.assistant import load_config, load_movie_lens, get_logger, seed_everything
 from torch.utils.data import DataLoader
 
 from divrec.datasets import InferenceDataset
-from divrec.metrics import (
-    precision_at_k,
-    ndcg_at_k,
-    entropy_at_k,
-    intra_list_diversity,
-    intra_list_binary_unfairness,
-    popularity_lift_at_k,
-)
 from divrec.models import RandomModel
 from divrec.utils import (
     recommendations_loop,
     train_test_split,
-    popularity_categories,
-    features_distance_matrix,
+)
+from experiments.assistant import (
+    load_config,
+    load_movie_lens,
+    get_logger,
+    seed_everything,
+    evaluate_model,
 )
 
 
@@ -83,54 +77,13 @@ def main(filepath: str) -> None:
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        scores = pd.DataFrame(np.arange(dataset.no_users), columns=["user_id"])
-
-        precision_at_10 = precision_at_k(test_dataset.interactions, recommendations, k)
-        scores[f"precision_at_{k}"] = precision_at_10.numpy()
-        mlflow.log_metric(f"precision_at_{k}", torch.mean(precision_at_10).item())
-        logger.info(f"Precision@{k}: {torch.mean(precision_at_10).item():.6f}")
-
-        ndcg_at_10 = ndcg_at_k(test_dataset.interactions, recommendations, k)
-        scores[f"ndcg_at_{k}"] = ndcg_at_10.numpy()
-        mlflow.log_metric(f"ndcg_at_{k}", torch.mean(ndcg_at_10).item())
-        logger.info(f"NDCG@{k}: {torch.mean(ndcg_at_10).item():.6f}")
-
-        entropy_at_10 = entropy_at_k(test_dataset.interactions, recommendations, k)
-        scores[f"entropy_at_{k}"] = math.log(k)
-        mlflow.log_metric(f"entropy_at_{k}", entropy_at_10)
-        logger.info(f"Entropy@{k}: {entropy_at_10:.6f}")
-
-        ild_genres_at_10 = intra_list_diversity(
-            features_distance_matrix(dataset.item_features), recommendations
+        # evaluate model
+        means, scores = evaluate_model(
+            config, train_dataset, test_dataset, recommendations, means_only=False
         )
-        scores["ild_genres"] = ild_genres_at_10.numpy()
-        mlflow.log_metric(f"ild_genres_at_{k}", torch.mean(ild_genres_at_10).item())
-        logger.info(f"ILD by genres@{k}: {torch.mean(ild_genres_at_10).item():.6f}")
-
-        ilbu_at_top_20_at_10 = intra_list_binary_unfairness(
-            popularity_categories(
-                train_dataset.no_items,
-                train_dataset.interactions,
-                config["ilbu_quantile"],
-            ),
-            recommendations,
-        )
-        scores[f"ilbu_at_top_20_at_{k}"] = ilbu_at_top_20_at_10.numpy()
-        mlflow.log_metric(
-            f"ilbu_at_top_20_at_{k}", torch.mean(ilbu_at_top_20_at_10).item()
-        )
-        logger.info(
-            f"ILBU by top-20%@{k}: {torch.mean(ilbu_at_top_20_at_10).item():.6f}"
-        )
-
-        popularity_lift_at_10 = popularity_lift_at_k(
-            train_dataset.interactions, recommendations, k
-        )
-        scores[f"popularity_lift_at_{k}"] = popularity_lift_at_10.numpy()
-        mlflow.log_metric(
-            f"popularity_lift_at_{k}", torch.mean(popularity_lift_at_10).item()
-        )
-        logger.info(f"PL@{k}: {torch.mean(popularity_lift_at_10).item():.6f}")
+        for metric, value in means.items():
+            mlflow.log_metric(metric, value)
+            logger.info(f"{metric}: {value:.6f}")
 
         scores.to_csv("metrics.csv")
         logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")

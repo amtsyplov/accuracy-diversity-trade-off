@@ -6,7 +6,6 @@ import mlflow
 import numpy as np
 import pandas as pd
 import torch
-from experiments.assistant import load_config, load_movie_lens, get_logger, seed_everything, evaluate_model
 from torch import nn
 from torch.utils.data import DataLoader
 
@@ -16,6 +15,13 @@ from divrec.utils import (
     negative_sampling_train_loop,
     recommendations_loop,
     train_test_split,
+)
+from experiments.assistant import (
+    load_config,
+    load_movie_lens,
+    get_logger,
+    seed_everything,
+    evaluate_model,
 )
 
 
@@ -106,7 +112,9 @@ def main(filepath: str) -> None:
                 remove_interactions=True,
             )
 
-            means, _ = evaluate_model(config, train_dataset, test_dataset, recommendations, means_only=True)
+            means, _ = evaluate_model(
+                config, train_dataset, test_dataset, recommendations, means_only=True
+            )
             train_scores.append(means)
             for metric, value in means.items():
                 mlflow.log_metric(metric, value, step=epoch)
@@ -139,7 +147,9 @@ def main(filepath: str) -> None:
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        means, scores = evaluate_model(config, train_dataset, test_dataset, recommendations, means_only=False)
+        means, scores = evaluate_model(
+            config, train_dataset, test_dataset, recommendations, means_only=False
+        )
         for metric, value in means.items():
             mlflow.log_metric(metric, value)
             logger.info(f"{metric}: {value:.6f}")
