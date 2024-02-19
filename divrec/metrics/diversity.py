@@ -67,7 +67,9 @@ def intra_list_diversity(
 def intra_list_binary_unfairness(
     item_categories: torch.Tensor, recommendations: torch.LongTensor
 ) -> torch.Tensor:
-    return intra_list_diversity(item_categories @ item_categories.T, recommendations)
+    distance_matrix = item_categories @ item_categories.T
+    distance_matrix *= 1 - torch.eye(item_categories.size(0))
+    return intra_list_diversity(distance_matrix, recommendations)
 
 
 def miscalibration(
