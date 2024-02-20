@@ -21,7 +21,7 @@ from experiments.assistant import (
     load_movie_lens,
     get_logger,
     seed_everything,
-    evaluate_model,
+    evaluate_movie_lens,
 )
 
 
@@ -46,9 +46,12 @@ class BPRLoss(nn.Module):
 @click.option("-c", "--config-file", "filepath", default="config.yaml")
 def main(filepath: str) -> None:
     # run preparation
-    logger = get_logger(__file__, os.path.abspath("console.log"))
-
     config = load_config(os.path.abspath(filepath))
+
+    logger = get_logger(
+        f'{config["mlflow_experiment"]}/{config["mlflow_run_name"]}/main.py',
+        os.path.join(os.path.dirname(__file__), "console.log"),
+    )
     logger.info("Load config:\n" + str(config))
 
     seed_everything(config["seed"])
@@ -112,23 +115,22 @@ def main(filepath: str) -> None:
                 remove_interactions=True,
             )
 
-            means, _ = evaluate_model(
-                config, train_dataset, test_dataset, recommendations, means_only=True
-            )
+            means, _ = evaluate_movie_lens(logger, config, train_dataset, test_dataset, recommendations,
+                                           means_only=True, prefix="train_")
+            means["log_sigmoid"] = loss_value
             train_scores.append(means)
-            for metric, value in means.items():
-                mlflow.log_metric(metric, value, step=epoch)
-                logger.info(f"{metric}: {value:.6f}")
+            mlflow.log_metrics(means, step=epoch)
 
         model.eval()
         logger.info("Finish model training")
 
-        torch.save(model.state_dict(), "model.pth")
+        torch.save(model.state_dict(), os.path.join(os.path.dirname(__file__), "model.pth"))
         logger.info("Finish model saving")
 
         train_scores = pd.DataFrame(train_scores)
         train_scores["epoch"] = np.arange(1, epochs + 1)
-        train_scores.to_csv("train_metrics.csv")
+        train_scores.to_csv(os.path.join(os.path.dirname(__file__), "train_metrics.csv"))
+        logger.info("Finish train metrics saving")
 
         # inference model
         recommendations = recommendations_loop(
@@ -143,19 +145,21 @@ def main(filepath: str) -> None:
             recommendations.detach().numpy(), columns=[f"i_{i}" for i in range(k)]
         )
         recommendations_df["user_id"] = np.arange(len(recommendations_df))
-        recommendations_df.to_csv(os.path.abspath("recommendations.csv"))
+        recommendations_df.to_csv(os.path.join(os.path.dirname(__file__), "recommendations.csv"))
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        means, scores = evaluate_model(
-            config, train_dataset, test_dataset, recommendations, means_only=False
+        means, scores = evaluate_movie_lens(
+            logger,
+            config,
+            train_dataset,
+            test_dataset,
+            recommendations,
+            means_only=False,
         )
-        for metric, value in means.items():
-            mlflow.log_metric(metric, value)
-            logger.info(f"{metric}: {value:.6f}")
-
-        scores.to_csv("metrics.csv")
-        logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
+        mlflow.log_metrics(means)
+        scores.to_csv(os.path.join(os.path.dirname(__file__), "metrics.csv"))
+        logger.info(f"Scores saved to {os.path.join(os.path.dirname(__file__), 'metrics.csv')}")
 
         # end run
         logger.info(f"Finish model {model} evaluation")

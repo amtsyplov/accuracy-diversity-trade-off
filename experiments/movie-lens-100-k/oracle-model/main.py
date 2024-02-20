@@ -12,7 +12,7 @@ from experiments.assistant import (
     load_movie_lens,
     get_logger,
     seed_everything,
-    evaluate_model,
+    evaluate_movie_lens,
 )
 
 
@@ -20,9 +20,12 @@ from experiments.assistant import (
 @click.option("-c", "--config-file", "filepath", default="config.yaml")
 def main(filepath: str) -> None:
     # run preparation
-    logger = get_logger(__file__, os.path.abspath("console.log"))
-
     config = load_config(os.path.abspath(filepath))
+
+    logger = get_logger(
+        f'{config["mlflow_experiment"]}/{config["mlflow_run_name"]}/main.py',
+        os.path.join(os.path.dirname(__file__), "console.log"),
+    )
     logger.info("Load config:\n" + str(config))
 
     seed_everything(config["seed"])
@@ -52,27 +55,24 @@ def main(filepath: str) -> None:
 
         # inference model
         k = config["test_interactions_per_user"]
-        recommendations = torch.reshape(test_dataset.interactions[:, 1], shape=(dataset.no_users, -1))[:, :k]
+        recommendations = torch.reshape(
+            test_dataset.interactions[:, 1], shape=(dataset.no_users, -1)
+        )[:, :k]
         logger.info(f"Finish model inference")
 
         recommendations_df = pd.DataFrame(
             recommendations.detach().numpy(), columns=[f"i_{i}" for i in range(k)]
         )
         recommendations_df["user_id"] = np.arange(len(recommendations_df))
-        recommendations_df.to_csv(os.path.abspath("recommendations.csv"))
+        recommendations_df.to_csv(os.path.join(os.path.dirname(__file__), "recommendations.csv"))
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        # evaluate model
-        means, scores = evaluate_model(
-            config, train_dataset, test_dataset, recommendations, means_only=False
-        )
-        for metric, value in means.items():
-            mlflow.log_metric(metric, value)
-            logger.info(f"{metric}: {value:.6f}")
-
-        scores.to_csv("metrics.csv")
-        logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
+        means, scores = evaluate_movie_lens(logger, config, train_dataset, test_dataset, recommendations,
+                                            means_only=False)
+        mlflow.log_metrics(means)
+        scores.to_csv(os.path.join(os.path.dirname(__file__), "metrics.csv"))
+        logger.info(f"Scores saved to {os.path.join(os.path.dirname(__file__), 'metrics.csv')}")
 
         # end run
         logger.info(f"Finish model evaluation")
