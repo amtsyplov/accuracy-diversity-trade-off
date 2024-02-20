@@ -265,7 +265,7 @@ def recommendations_loop(
             if remove_interactions:
                 probability[user_sequence] = 0.0
             recommendations.append(
-                torch.argsort(probability, descending=True)[:recommendations_count]
+                torch.topk(probability, recommendations_count).indices
             )
 
             if verbosity > 0 and batch % verbosity == 0:
