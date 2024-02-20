@@ -17,7 +17,7 @@ from experiments.assistant import (
     load_amazon_beauty,
     get_logger,
     seed_everything,
-    evaluate_model,
+    evaluate_amazon_beauty,
 )
 
 
@@ -25,9 +25,12 @@ from experiments.assistant import (
 @click.option("-c", "--config-file", "filepath", default="config.yaml")
 def main(filepath: str) -> None:
     # run preparation
-    logger = get_logger(__file__, os.path.abspath("console.log"))
-
     config = load_config(os.path.abspath(filepath))
+
+    logger = get_logger(
+        f'{config["mlflow_experiment"]}/{config["mlflow_run_name"]}/main.py',
+        os.path.join(os.path.dirname(__file__), "console.log"),
+    )
     logger.info("Load config:\n" + str(config))
 
     seed_everything(config["seed"])
@@ -66,6 +69,8 @@ def main(filepath: str) -> None:
             model,
             k,
             remove_interactions=True,
+            verbosity=500,
+            logger=logger,
         )
         logger.info(f"Finish model {model} inference")
 
@@ -73,20 +78,21 @@ def main(filepath: str) -> None:
             recommendations.detach().numpy(), columns=[f"i_{i}" for i in range(k)]
         )
         recommendations_df["user_id"] = np.arange(len(recommendations_df))
-        recommendations_df.to_csv(os.path.abspath("recommendations.csv"))
+        recommendations_df.to_csv(os.path.join(os.path.dirname(__file__), "recommendations.csv"))
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        # evaluate model
-        means, scores = evaluate_model(
-            config, train_dataset, test_dataset, recommendations, means_only=False
+        means, scores = evaluate_amazon_beauty(
+            logger,
+            config,
+            train_dataset,
+            test_dataset,
+            recommendations,
+            means_only=False,
         )
-        for metric, value in means.items():
-            mlflow.log_metric(metric, value)
-            logger.info(f"{metric}: {value:.6f}")
-
-        scores.to_csv("metrics.csv")
-        logger.info(f"Scores saved to {os.path.abspath('metrics.csv')}")
+        mlflow.log_metrics(means)
+        scores.to_csv(os.path.join(os.path.dirname(__file__), "metrics.csv"))
+        logger.info(f"Scores saved to {os.path.join(os.path.dirname(__file__), 'metrics.csv')}")
 
         # end run
         logger.info(f"Finish model {model} evaluation")

@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List, Optional
 
 import torch
@@ -232,9 +233,13 @@ def recommendations_loop(
     model: BaseModel,
     recommendations_count: int,
     remove_interactions: bool = True,
+    verbosity: int = -1,
+    logger: Optional[Logger] = None,
 ) -> torch.LongTensor:
     assert isinstance(data_loader.dataset, InferenceDataset)
     assert data_loader.batch_size == data_loader.dataset.no_items
+    assert verbosity < 0 or logger is not None
+
     recommendations = []
     model.eval()
     with torch.no_grad():
@@ -262,6 +267,9 @@ def recommendations_loop(
             recommendations.append(
                 torch.argsort(probability, descending=True)[:recommendations_count]
             )
+
+            if verbosity > 0 and batch % verbosity == 0:
+                logger.info(f"Process [{batch}/{data_loader.dataset.no_users}] batch")
 
     recommendations = torch.reshape(
         torch.concat(recommendations),
