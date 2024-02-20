@@ -143,7 +143,7 @@ def main(filepath: str) -> None:
         logger.info("Finish model saving")
 
         train_scores = pd.DataFrame(train_scores)
-        train_scores["epoch"] = np.arange(1, epochs + 1)
+        train_scores["epoch"] = np.arange(epochs + 1)
         train_scores.to_csv(os.path.join(os.path.dirname(__file__), "train_metrics.csv"))
         logger.info("Finish train metrics saving")
 

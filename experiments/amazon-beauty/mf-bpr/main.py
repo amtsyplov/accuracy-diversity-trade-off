@@ -98,8 +98,23 @@ def main(filepath: str) -> None:
         )
 
         k = config["test_interactions_per_user"]
+
+        # scores before training
+        recommendations = recommendations_loop(
+            inference_loader,
+            model,
+            k,
+            remove_interactions=True,
+        )
+
+        means, _ = evaluate_amazon_beauty(logger, config, train_dataset, test_dataset, recommendations,
+                                          means_only=True, prefix="train_")
+
+        means["log_sigmoid"] = math.log(2)  # because with uniform init average model score = 0
+        train_scores = [means]
+        mlflow.log_metrics(means, step=0)
+
         epochs = config["epochs"]
-        train_scores = []
         logger.info(f"Start training model {model}")
         for epoch in range(1, epochs + 1):
             loss_value, _ = negative_sampling_train_loop(
@@ -130,7 +145,7 @@ def main(filepath: str) -> None:
         logger.info("Finish model saving")
 
         train_scores = pd.DataFrame(train_scores)
-        train_scores["epoch"] = np.arange(1, epochs + 1)
+        train_scores["epoch"] = np.arange(epochs + 1)
         train_scores.to_csv(os.path.join(os.path.dirname(__file__), "train_metrics.csv"))
         logger.info("Finish train metrics saving")
 
