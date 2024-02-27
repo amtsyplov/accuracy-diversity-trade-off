@@ -3,6 +3,8 @@ mlflow_tracking_uri: "http://127.0.0.1:8080"
 mlflow_experiment: "amazon-beauty"
 mlflow_run_name: "random-model"
 min_user_interactions: 20
+min_item_interactions: 50
 test_interactions_per_user: 10
 ilbu_quantile: 0.8
 seed: 42
+verbosity: 100

@@ -17,7 +17,21 @@ def load_amazon_beauty(config: Dict[str, Any]) -> UserItemInteractionsDataset:
     )
 
     interactions_count = (
-        data.rename(columns={"ProductId": "InteractionsCount"})
+        data.rename(columns={"UserId": "InteractionsCount"})
+        .groupby("ProductId")
+        .agg({"InteractionsCount": "count"})
+        .reset_index()
+    )
+
+    allowed_items = interactions_count.loc[
+        interactions_count["InteractionsCount"] >= config["min_item_interactions"],
+        ["ProductId"],
+    ].reset_index(drop=True)
+
+    data_filtered = data.merge(allowed_items, how="inner", on="ProductId")
+
+    interactions_count = (
+        data_filtered.rename(columns={"ProductId": "InteractionsCount"})
         .groupby("UserId")
         .agg({"InteractionsCount": "count"})
         .reset_index()
@@ -28,7 +42,7 @@ def load_amazon_beauty(config: Dict[str, Any]) -> UserItemInteractionsDataset:
         ["UserId"],
     ].reset_index(drop=True)
 
-    data_filtered = data.merge(allowed_users, how="inner", on="UserId")
+    data_filtered = data_filtered.merge(allowed_users, how="inner", on="UserId")
     no_users = data_filtered["UserId"].nunique()
     no_items = data_filtered["ProductId"].nunique()
 
