@@ -1,0 +1,13 @@
+data_dir: "/Users/alexey.tsyplov/Projects/accuracy-diversity-trade-off/experiments/movie-lens-100-k/data/"
+mlflow_tracking_uri: "http://127.0.0.1:8080"
+mlflow_experiment: "movie-lens-100-k"
+mlflow_run_name: "mf-bpr-zero-sum"
+test_interactions_per_user: 10
+ilbu_quantile: 0.8
+seed: 42
+embedding_dim: 80
+lr: 0.001
+batch_size: 256
+max_sampled: 32
+epochs: 10
+alpha: 0.1
