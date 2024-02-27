@@ -1,0 +1,17 @@
+data_dir: "/Users/alexey.tsyplov/Projects/accuracy-diversity-trade-off/experiments/amazon-beauty/"
+mlflow_tracking_uri: "http://127.0.0.1:8080"
+mlflow_experiment: "amazon-beauty"
+mlflow_run_name: "mf-bpr-zero-sum"
+min_user_interactions: 20
+min_item_interactions: 50
+test_interactions_per_user: 10
+ilbu_quantile: 0.8
+seed: 42
+embedding_dim: 80
+lr: 0.001
+batch_size: 256
+max_sampled: 32
+epochs: 15
+verbosity: 100
+train_verbosity: -1
+alpha: 0.1

@@ -18,10 +18,10 @@ from divrec.utils import (
 )
 from experiments.assistant import (
     load_config,
-    load_movie_lens,
+    load_amazon_beauty,
     get_logger,
     seed_everything,
-    evaluate_movie_lens,
+    evaluate_amazon_beauty,
 )
 
 
@@ -66,7 +66,7 @@ def main(filepath: str) -> None:
         mlflow.log_artifact(os.path.abspath(filepath))
 
         # load and split data
-        dataset = load_movie_lens(config)
+        dataset = load_amazon_beauty(config)
         logger.info("Load dataset:\n" + str(dataset))
 
         train_dataset, test_dataset = train_test_split(
@@ -110,8 +110,8 @@ def main(filepath: str) -> None:
             remove_interactions=True,
         )
 
-        means, _ = evaluate_movie_lens(logger, config, train_dataset, test_dataset, recommendations,
-                                       means_only=True, prefix="train_")
+        means, _ = evaluate_amazon_beauty(logger, config, train_dataset, test_dataset, recommendations,
+                                          means_only=True, prefix="train_")
 
         means["log_sigmoid"] = math.log(2)  # because with uniform init average model score = 0
         train_scores = [means]
@@ -131,10 +131,12 @@ def main(filepath: str) -> None:
                 model,
                 k,
                 remove_interactions=True,
+                verbosity=config["train_verbosity"],
+                logger=logger,
             )
 
-            means, _ = evaluate_movie_lens(logger, config, train_dataset, test_dataset, recommendations,
-                                           means_only=True, prefix="train_")
+            means, _ = evaluate_amazon_beauty(logger, config, train_dataset, test_dataset,
+                                              recommendations, means_only=True, prefix="train_")
             means["log_sigmoid"] = loss_value
             train_scores.append(means)
             mlflow.log_metrics(means, step=epoch)
@@ -156,6 +158,8 @@ def main(filepath: str) -> None:
             model,
             k,
             remove_interactions=True,
+            verbosity=config["verbosity"],
+            logger=logger,
         )
         logger.info(f"Finish model {model} inference")
 
@@ -167,7 +171,7 @@ def main(filepath: str) -> None:
         logger.info("Finish recommendations saving")
 
         # evaluate model
-        means, scores = evaluate_movie_lens(
+        means, scores = evaluate_amazon_beauty(
             logger,
             config,
             train_dataset,
