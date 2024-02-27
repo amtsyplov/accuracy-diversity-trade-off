@@ -7,4 +7,3 @@ min_item_interactions: 50
 test_interactions_per_user: 10
 ilbu_quantile: 0.8
 seed: 42
-verbosity: 100

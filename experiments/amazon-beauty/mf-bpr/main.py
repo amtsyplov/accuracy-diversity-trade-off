@@ -128,7 +128,7 @@ def main(filepath: str) -> None:
                 model,
                 k,
                 remove_interactions=True,
-                verbosity=config["verbosity"],
+                verbosity=config["train_verbosity"],
                 logger=logger,
             )
 
@@ -155,7 +155,7 @@ def main(filepath: str) -> None:
             model,
             k,
             remove_interactions=True,
-            verbosity=500,
+            verbosity=config["verbosity"],
             logger=logger,
         )
         logger.info(f"Finish model {model} inference")

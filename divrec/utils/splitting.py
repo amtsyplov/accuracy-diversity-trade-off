@@ -26,13 +26,9 @@ def train_test_split(
         .copy()
     )
 
-    train_interaction_scores = dataset.interaction_scores[
-        torch.BoolTensor(interactions_index > test_interactions_per_user)
-    ]
-
-    test_interaction_scores = dataset.interaction_scores[
-        torch.BoolTensor(interactions_index <= test_interactions_per_user)
-    ]
+    mask = torch.BoolTensor(interactions_index.values[::-1] > test_interactions_per_user)
+    train_interaction_scores = dataset.interaction_scores[mask]
+    test_interaction_scores = dataset.interaction_scores[~mask]
 
     train_dataset = dataset.__class__(
         dataset.no_users,

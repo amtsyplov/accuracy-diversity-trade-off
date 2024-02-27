@@ -2,7 +2,6 @@ import os
 
 from typing import Any, Dict
 
-import numpy as np
 import pandas as pd
 
 import torch
@@ -52,15 +51,11 @@ def load_amazon_beauty(config: Dict[str, Any]) -> UserItemInteractionsDataset:
     user_encoder = LabelEncoder()
     item_encoder = LabelEncoder()
 
-    interactions = torch.LongTensor(
-        np.transpose(
-            [
-                user_encoder.fit_transform(data_filtered["UserId"]),
-                item_encoder.fit_transform(data_filtered["ProductId"]),
-            ]
-        )
-    )
+    data_filtered["UserId"] = user_encoder.fit_transform(data_filtered["UserId"])
+    data_filtered["ProductId"] = user_encoder.fit_transform(data_filtered["ProductId"])
+    data_filtered.sort_values(["UserId", "Timestamp"], ignore_index=True, inplace=True)
 
+    interactions = torch.LongTensor(data_filtered[["UserId", "ProductId"]].values)
     interaction_scores = torch.tensor(data_filtered["Rating"].values, dtype=torch.float)
 
     return UserItemInteractionsDataset(
