@@ -1,5 +1,8 @@
 from typing import Optional, Tuple
 
+import numpy as np
+import pandas as pd
+
 import torch
 from torch.utils.data import Dataset
 
@@ -64,7 +67,7 @@ class UserItemInteractionsDataset(Dataset):
         if self.padding is None:
             return sequence
         elif size >= self.padding:
-            return sequence[-self.padding :]
+            return sequence[-self.padding:]
         else:
             padding = torch.full(
                 (self.padding - size,), sequence[0], dtype=sequence.dtype
@@ -83,3 +86,27 @@ class UserItemInteractionsDataset(Dataset):
             interactions=dataset.interactions,
             padding=dataset.padding,
         )
+
+    def to_pandas(self) -> pd.DataFrame:
+        data = pd.DataFrame(
+            self.interactions.numpy(),
+            columns=["user_id", "item_id"],
+        )
+        data["score"] = self.interaction_scores.numpy()
+        return data
+
+    def user_features_pandas(self) -> pd.DataFrame:
+        data = pd.DataFrame(
+            self.user_features.numpy(),
+            columns=[f"xu_{j}" for j in range(self.user_features.size(1))]
+        )
+        data["user_id"] = np.arange(self.no_users)
+        return data
+
+    def item_features_pandas(self) -> pd.DataFrame:
+        data = pd.DataFrame(
+            self.item_features.numpy(),
+            columns=[f"xi_{j}" for j in range(self.item_features.size(1))]
+        )
+        data["item_id"] = np.arange(self.no_items)
+        return data
